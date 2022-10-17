@@ -59,7 +59,7 @@ public class RegistrarEmprestimoImpl implements RegistrarEmprestimoServicePort {
 
   private boolean isInvalida(Emprestimo emprestimo) {
     return isNull(emprestimo.getDataPrevista(), emprestimo.getDataEmprestimo(), emprestimo.getUsuario()) 
-      || emprestimo.getDataEmprestimo().compareTo(emprestimo.getDataPrevista()) > 0;
+      || emprestimo.getDataPrevista().compareTo(emprestimo.getDataEmprestimo()) != 7;
   }
 
   public Optional<Emprestimo> buscarEmprestimoPorId(UUID id) {

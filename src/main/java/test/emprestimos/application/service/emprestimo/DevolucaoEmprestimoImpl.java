@@ -62,13 +62,16 @@ public class DevolucaoEmprestimoImpl implements DevolucaoEmprestimoServicePort {
     var dataPrevista = emprestimo.getDataPrevista();
     var dataDevolucao = emprestimo.getDataDevolucao();
 
-    var atrasoEmDias = dataPrevista.until(dataDevolucao, ChronoUnit.DAYS);
+    var atrasoEmDias = Math.max(0, dataPrevista.until(dataDevolucao, ChronoUnit.DAYS));
     var tarifaEmprestimo = VALOR_POR_LIVRO_FIXO.multiply(new BigDecimal(emprestimo.getLivrosEmprestados().size()));
 
     var tarifaAtraso = TARIFA_POR_ATRASO
       .multiply(new BigDecimal(atrasoEmDias).setScale(2, RoundingMode.HALF_EVEN))
-      .min(tarifaEmprestimo.multiply(PORCENTAGEM_MAXIMA_TARIFA)).setScale(2, RoundingMode.HALF_EVEN);
+      .min(tarifaEmprestimo.multiply(PORCENTAGEM_MAXIMA_TARIFA))
+      .setScale(2, RoundingMode.HALF_EVEN);
     
+
+
     return new OrdemDePagemento() {{
       setId(UUID.randomUUID());
       setValor(tarifaEmprestimo);

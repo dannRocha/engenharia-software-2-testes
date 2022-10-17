@@ -89,8 +89,8 @@ public class EmprestimoDataBuilder {
         .id(id)
         .usuario(usuario)
         .dataEmprestimo(LocalDate.now())
-        .dataPrevista(LocalDate.now().plusDays(1))
-        .dataDevolucao(LocalDate.now().plusDays(1))
+        .dataPrevista(LocalDate.now().plusDays(7))
+        .dataDevolucao(LocalDate.now().plusDays(7))
         .livrosEmprestados(livros.parallelStream().collect(Collectors.toList()))
         .build();
 

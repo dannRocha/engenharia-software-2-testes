@@ -62,7 +62,7 @@ public class RegistrarEmprestimoServiceTest {
       .id(UUID.randomUUID())
       .usuario(usuario)
       .dataEmprestimo(LocalDate.now())
-      .dataPrevista(LocalDate.now().plusDays(1))
+      .dataPrevista(LocalDate.now().plusDays(7))
       .livrosEmprestados(livros.parallelStream().collect(Collectors.toList()))
       .build();
 
@@ -84,7 +84,7 @@ public class RegistrarEmprestimoServiceTest {
       .aEmprestimo()
       .id(UUID.randomUUID())
       .dataEmprestimo(LocalDate.now())
-      .dataPrevista(LocalDate.now().plusDays(1))
+      .dataPrevista(LocalDate.now().plusDays(7))
       .livrosEmprestados(livros.parallelStream().collect(Collectors.toList()))
       .build();
 
@@ -134,6 +134,33 @@ public class RegistrarEmprestimoServiceTest {
     });
   }
 
+  void naoDeveRegistrarEmprestimoComDataDePrevisaoDeDevolucaoDiferenteDeSete() {
+    var livros = LivroDataBuilder.aGroup()
+      .limit(3)
+      .buildGroup();
+
+    var usuario  = UsuarioDataBuilder.aUsuario()
+      .id(UUID.randomUUID())
+      .nome("Astrogildo")
+      .build();
+
+    var emprestimo = EmprestimoDataBuilder
+      .aEmprestimo()
+      .id(UUID.randomUUID())
+      .usuario(usuario)
+      .dataEmprestimo(LocalDate.now())
+      .dataPrevista(LocalDate.now().plusDays(1))
+      .livrosEmprestados(livros.parallelStream().collect(Collectors.toList()))
+      .build();
+
+    livroRepository.salvarTodos(livros);
+
+    registroEmprestimo.registrarEmprestimo(emprestimo);
+
+    var usuarioSalvo = registroEmprestimo.buscarEmprestimoPorId(emprestimo.getId());
+    assertTrue(usuarioSalvo.isPresent());
+  }
+
 
   @Test
   void deveBuscarUmEmprestimoPorUsuario() {
@@ -151,7 +178,7 @@ public class RegistrarEmprestimoServiceTest {
       .id(UUID.randomUUID())
       .usuario(usuario)
       .dataEmprestimo(LocalDate.now())
-      .dataPrevista(LocalDate.now().plusDays(1))
+      .dataPrevista(LocalDate.now().plusDays(7))
       .livrosEmprestados(livros.parallelStream().collect(Collectors.toList()))
       .build();
 
@@ -219,7 +246,7 @@ public class RegistrarEmprestimoServiceTest {
       .id(UUID.randomUUID())
       .usuario(usuario)
       .dataEmprestimo(LocalDate.now())
-      .dataPrevista(LocalDate.now().plusDays(1))
+      .dataPrevista(LocalDate.now().plusDays(7))
       .livrosEmprestados(livros.parallelStream().limit(1).collect(Collectors.toList()))
       .build();
 

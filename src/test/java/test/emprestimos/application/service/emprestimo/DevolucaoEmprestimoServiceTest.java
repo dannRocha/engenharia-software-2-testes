@@ -71,10 +71,10 @@ public class DevolucaoEmprestimoServiceTest {
     var emprestimo = EmprestimoDataBuilder
       .aEmprestimo()
       .usuario(usuario)
-      .dataEmprestimo(LocalDate.now().minusDays(1))
       .livrosEmprestados(livros.stream().collect(Collectors.toList()))
-      .dataPrevista(today)
-      .dataDevolucao(today)
+      .dataEmprestimo(today)
+      .dataPrevista(today.plusDays(7))
+      .dataDevolucao(today.plusDays(7))
       .build();
 
     registrarEmprestimo.registrarEmprestimo(emprestimo);
@@ -86,6 +86,41 @@ public class DevolucaoEmprestimoServiceTest {
     assertTrue(ordem.getMulta().equals(new BigDecimal("0.00")));
     
   }
+
+  @Test
+  void deveGerarUmaOrdemDePagamentoSemMultaComDevolucaoAntecipada() {
+    var livros = LivroDataBuilder
+      .aGroup()
+      .limit(3)
+      .buildGroup();
+
+    livroRepository.salvarTodos(livros);
+    var usuario = UsuarioDataBuilder.aUsuario()
+      .id(UUID.randomUUID())
+      .nome("Astrogildo")
+      .build();
+
+    var today = LocalDate.now();
+
+    var emprestimo = EmprestimoDataBuilder
+      .aEmprestimo()
+      .usuario(usuario)
+      .livrosEmprestados(livros.stream().collect(Collectors.toList()))
+      .dataEmprestimo(today)
+      .dataPrevista(today.plusDays(7))
+      .dataDevolucao(today.plusDays(1))
+      .build();
+
+    registrarEmprestimo.registrarEmprestimo(emprestimo);
+
+    var emprestimoFinalizado = devolucaoEmprestimo.finalizarEmprestimo(emprestimo.getId());
+
+    var ordem = devolucaoEmprestimo.gerarOrdemDePagamento(emprestimoFinalizado);
+
+    assertTrue(ordem.getMulta().equals(new BigDecimal("0.00")));
+    
+  }
+
 
   @Test
   void deveGerarUmaOrdemDePagamentoComMultaMaxima() {
@@ -103,9 +138,9 @@ public class DevolucaoEmprestimoServiceTest {
     var emprestimo = EmprestimoDataBuilder
       .aEmprestimo()
       .usuario(usuario)
-      .dataEmprestimo(LocalDate.now().minusDays(1))
       .livrosEmprestados(livros.stream().collect(Collectors.toList()))
-      .dataPrevista(LocalDate.now())
+      .dataEmprestimo(LocalDate.now())
+      .dataPrevista(LocalDate.now().plusDays(7))
       .dataDevolucao(LocalDate.now().plusDays(120))
       .build();
     
@@ -137,10 +172,10 @@ public class DevolucaoEmprestimoServiceTest {
     var emprestimo = EmprestimoDataBuilder
       .aEmprestimo()
       .usuario(usuario)
-      .dataEmprestimo(LocalDate.now().minusDays(1))
+      .dataEmprestimo(LocalDate.now())
       .livrosEmprestados(livros.stream().collect(Collectors.toList()))
-      .dataPrevista(LocalDate.now())
-      .dataDevolucao(LocalDate.now().plusDays(1))
+      .dataPrevista(LocalDate.now().plusDays(7))
+      .dataDevolucao(LocalDate.now().plusDays(8))
       .build();
 
     
@@ -151,6 +186,47 @@ public class DevolucaoEmprestimoServiceTest {
     var ordem = devolucaoEmprestimo.gerarOrdemDePagamento(emprestimoFinalizado);
 
     var expected = new BigDecimal(0.40D).setScale(2, RoundingMode.HALF_EVEN);
+
+    assertEquals(expected, ordem.getMulta());
+  }
+
+  @Test
+  void deveGerarUmaOrdemDePagamentoComMultaDe30DiasDeAtraso() {
+    var livros = LivroDataBuilder
+      .aGroup()
+      .limit(3)
+      .buildGroup();
+
+    livroRepository.salvarTodos(livros);
+    var usuario = UsuarioDataBuilder.aUsuario()
+      .id(UUID.randomUUID())
+      .nome("Astrogildo")
+      .build();
+    
+    var emprestimo = EmprestimoDataBuilder
+      .aEmprestimo()
+      .usuario(usuario)
+      .livrosEmprestados(livros.stream().collect(Collectors.toList()))
+      .dataEmprestimo(LocalDate.now())
+      .dataPrevista(LocalDate.now().plusDays(7))
+      .dataDevolucao(LocalDate.now().plusDays(37))
+      .build();
+    
+    registrarEmprestimo.registrarEmprestimo(emprestimo);
+
+    var emprestimoFinalizado = devolucaoEmprestimo.finalizarEmprestimo(emprestimo.getId());
+
+    var ordem = devolucaoEmprestimo.gerarOrdemDePagamento(emprestimoFinalizado);
+    var expected = ordem.getValor()
+      .multiply(new BigDecimal("0.6")).setScale(2, RoundingMode.HALF_EVEN);
+
+    var multaDe30Dias = BigDecimal.valueOf(30L)
+      .multiply(new BigDecimal(0.4D))
+      .setScale(2, RoundingMode.HALF_EVEN);
+
+    if(multaDe30Dias.compareTo(expected) < 0){
+      expected = multaDe30Dias;
+    }
 
     assertEquals(expected, ordem.getMulta());
   }
